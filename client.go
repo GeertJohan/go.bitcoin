@@ -1,4 +1,4 @@
-package bitcoind
+package bitcoin
 
 import (
 	"fmt"
@@ -6,23 +6,19 @@ import (
 	"net/http"
 )
 
-// WARNING!!!! This should not be a float!! float is probably not safe enough!
-// TODO: create safe Amount struct with json marshalling and pretty printing.
-type Amount float64
-
-type BitcoinClient struct {
+type BitcoindClient struct {
 	client *httpjsonrpc.Client
 }
 
-func NewBitcoinClient(url, username, password string) *BitcoinClient {
-	bc := &BitcoinClient{
+func NewBitcoindClient(url, username, password string) *BitcoindClient {
+	bc := &BitcoindClient{
 		client: httpjsonrpc.NewClient(url, &http.Client{}),
 	}
 	bc.client.SetBasicAuth(username, password)
 	return bc
 }
 
-func (bc *BitcoinClient) GetBalance() (*Amount, error) {
+func (bc *BitcoindClient) GetBalance() (*Amount, error) {
 	var balance Amount
 
 	resp, err := bc.client.Call("getbalance", nil, &balance)
