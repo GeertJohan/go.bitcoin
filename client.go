@@ -1,4 +1,4 @@
-package main
+package httpjsonrpc
 
 import (
 	"fmt"
@@ -34,11 +34,6 @@ func (bc *BitcoinClient) GetBalance() (*Amount, error) {
 	fmt.Println(balance)
 	fmt.Println(resp)
 	return &balance, nil
-}
-
-func main() {
-	bc := NewBitcoinClient("http://127.0.0.1:8332", "us3r", "p@ss")
-	fmt.Println(bc.GetBalance())
 }
 
 //Initialcommit.
