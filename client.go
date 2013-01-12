@@ -5,10 +5,12 @@ import (
 	"github.com/GeertJohan/go.httpjsonrpc"
 )
 
+// The BitcoindClient allows you to easily retrieve information from your bitcoind instance/server. 
 type BitcoindClient struct {
 	client *httpjsonrpc.Client
 }
 
+// Create a new BitcoindClient by http URL (e.g. http://127.0.0.1:8332), username and password.
 func NewBitcoindClient(url, username, password string) *BitcoindClient {
 	bc := &BitcoindClient{
 		client: httpjsonrpc.NewClient(url, nil),
@@ -18,17 +20,15 @@ func NewBitcoindClient(url, username, password string) *BitcoindClient {
 }
 
 func (bc *BitcoindClient) GetBalance() (*Amount, error) {
-	var balance Amount
+	var am = &Amount{}
 
-	resp, err := bc.client.Call("getbalance", nil, &balance)
+	_, err := bc.client.Call("getbalance", nil, am)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	fmt.Println(balance)
-	fmt.Println(resp)
-	return &balance, nil
+	return am, nil
 }
 
 //Initialcommit.
