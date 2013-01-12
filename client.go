@@ -3,7 +3,6 @@ package bitcoin
 import (
 	"fmt"
 	"github.com/GeertJohan/go.httpjsonrpc"
-	"net/http"
 )
 
 type BitcoindClient struct {
@@ -12,7 +11,7 @@ type BitcoindClient struct {
 
 func NewBitcoindClient(url, username, password string) *BitcoindClient {
 	bc := &BitcoindClient{
-		client: httpjsonrpc.NewClient(url, &http.Client{}),
+		client: httpjsonrpc.NewClient(url, nil),
 	}
 	bc.client.SetBasicAuth(username, password)
 	return bc
