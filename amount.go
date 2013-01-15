@@ -12,10 +12,16 @@ import (
 const SatoshisPerBitcoin = 100000000
 
 var (
-	// Regular expression to test for a string to be a valid full bitcoin string
-	regexpFullBitcoinsString = regexp.MustCompile(`[0-9]+\.[0-9]{8}`)
+	// Regular expression to test for a string to be a valid strict bitcoin string
+	regexpRoundBitcoinsString  = regexp.MustCompile(`^[0-9]+$`)
+	regexpLooseBitcoinsString  = regexp.MustCompile(`^[0-9]+\.[0-9]{1,8}$`)
+	regexpStrictBitcoinsString = regexp.MustCompile(`^[0-9]+\.[0-9]{8}$`)
+
 	// Error to be returned when a given bitcoin string isn't valid.
-	errorInvalidBitcoinString = errors.New("Invalid bitcoin string")
+	errorInvalidBitcoinsString       = errors.New(`Invalid bitcoins string. Expecting a string that conforms to either '[0-9]+' or '[0-9]+\\.[0-9]{1,8}' or '[0-9]+\\.[0-9]{8}'.`)
+	errorInvalidRoundBitcoinsString  = errors.New(`Invalid round bitcoins string. Expecting a string that conforms to '[0-9]+'.`)
+	errorInvalidLooseBitcoinsString  = errors.New(`Invalid strict bitcoins string. Expecting a string that conforms to '[0-9]+\.[0-9]{1,8}'.`)
+	errorInvalidStrictBitcoinsString = errors.New(`Invalid strict bitcoins string. Expecting a string that conforms to '[0-9]+\\.[0-9]{8}'.`)
 )
 
 // Amount represents any bitcoin value and presents convenient methods for calculation and formatting (pretty-printing).
@@ -86,30 +92,68 @@ func AmountFromSatoshisUint64(satoshis uint64) *Amount {
 // Internal helper function. Checks and converts bitcoin string to satoshi's.
 func satoshisFromBitcoinsString(bitcoins string) (uint64, error) {
 
-	if !regexpFullBitcoinsString.MatchString(bitcoins) {
-		return 0, errorInvalidBitcoinString
+	if regexpStrictBitcoinsString.MatchString(bitcoins) {
+		return satoshisFromStrictBitcoinsString(bitcoins)
 	}
 
-	// Wouldn't it be a lot easier to remove the period from the string and parse the whole string to uint64 satoshi's?
-	// We know for a fact that the string has 8 point decimal fracions, so removing the dot will give the value as satoshi's.
-	// Or do we want to accept decimal bitcoin strings that do not have 8 point decimal fractions? (e.g. "0.25")
-	// The last one wouldn't be so bad, as user input is likely to have less points... And this lib should support (and check) user input.
-	// TODO: accept [0-9]+\.[0-9]{1,8}
-	//				(between 1 and 8 decimal fraction points)
-	// TODO: accept [0-9]+
-	//				(no decimal fraction)
-	// Use switch true ?
-	// Use if/elseif/elseif/else ?
+	if regexpLooseBitcoinsString.MatchString(bitcoins) {
+		return satoshisFromLooseBitcoinsString(bitcoins)
+	}
+
+	if regexpRoundBitcoinsString.MatchString(bitcoins) {
+		return satoshisFromRoundBitcoinsString(bitcoins)
+	}
+
+	// couldn't try any valid format.
+	return 0, errorInvalidBitcoinsString
+}
+
+func satoshisFromRoundBitcoinsString(bitcoins string) (uint64, error) {
+	// Check that given string is valid.
+	if !regexpRoundBitcoinsString.MatchString(bitcoins) {
+		return 0, errorInvalidRoundBitcoinsString
+	}
+	// convert bitcoins string to bitcoinsUint64
+	bitcoinsUint64, _ := strconv.ParseUint(bitcoins, 10, 64)
+	// multiply bitcoinsUint64 with amount of satoshis in a bitcoin.. satoshis is what we want.
+	satoshis := bitcoinsUint64 * SatoshisPerBitcoin
+	// done
+	return satoshis, nil
+}
+
+func satoshisFromLooseBitcoinsString(bitcoins string) (uint64, error) {
+	// Check that given string is valid.
+	if !regexpLooseBitcoinsString.MatchString(bitcoins) {
+		return 0, errorInvalidLooseBitcoinsString
+	}
 
 	// Split fields on the point.
 	fields := strings.Split(bitcoins, ".")
-	// Get the value in front of the period (mayor).
-	mayor, err := strconv.ParseUint(fields[0], 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	// Get the value after the period (minor).
-	minor, _ := strconv.ParseUint(fields[1], 10, 64) // discard error, decimalBitcoin has been checked with regexp.
 
-	return (mayor * SatoshisPerBitcoin) + minor, nil
+	// Glue the fields together again (without a dot) and append with zero's to have the string represent the amount of satoshis
+	satoshiString := fields[0] + fields[1] + strings.Repeat("0", 8-len(fields[1]))
+	satoshis, _ := strconv.ParseUint(satoshiString, 10, 64) // discard error, we're pretty sure that the given string represents a valid uint64.
+
+	return satoshis, nil
+}
+
+// get amount of satoshis from a strict bitcoin string. A strict bitcoin string complies to [0-9]+\.[0-9]{8}
+func satoshisFromStrictBitcoinsString(bitcoins string) (uint64, error) {
+	// Check if given string is valid.
+	if !regexpStrictBitcoinsString.MatchString(bitcoins) {
+		return 0, errorInvalidStrictBitcoinsString
+	}
+
+	// Remove the dot from the bitcoins string
+	// We have a strict/complete bitcoin string so removing the dot will result in the amount of satoshi's as string
+	bitcoins = strings.Replace(bitcoins, ".", "", 1)
+
+	// format string
+	satoshis, err := strconv.ParseUint(bitcoins, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("Could not convert bitcoin string to satoshis: %s", err)
+	}
+
+	// All done
+	return satoshis, nil
 }
