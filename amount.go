@@ -26,18 +26,14 @@ var (
 
 // Amount represents any bitcoin value and presents convenient methods for calculation and formatting (pretty-printing).
 // Amount is not linked to a certain address or transaction.
-type Amount struct {
-	// Storing any amount as satoshi's (1/100,000,000th BTC) is safe. 
-	// uint64 can hold ALL satoshi's in the world and thus it wont overflow (unless Amount is used wrong)
-	satoshis uint64
-}
+type Amount uint64
 
 // Formats the Amount as full bitcoin string
 // The returned string always complies to the regex `[0-9]+\.[0-9]{8}`.
 // e.g.: 0.12345678 or 10.01020304 or 0.00100000 or 1004.12345678
-func (a *Amount) String() string {
+func (a Amount) String() string {
 	var mayor, minor string
-	satoshisString := strconv.FormatUint(a.satoshis, 10)
+	satoshisString := strconv.FormatUint(uint64(a), 10)
 	if len(satoshisString) > 8 {
 		mayor = satoshisString[:len(satoshisString)-8]
 		minor = satoshisString[len(satoshisString)-8:]
@@ -48,14 +44,9 @@ func (a *Amount) String() string {
 	return fmt.Sprintf("%s.%s", mayor, minor)
 }
 
-// Returns value as amount in satoshi's, as uint64. uint64 can theoretically hold all satoshi's in the universe. (1 BTC = 100,000,000 Satoshi).
-func (a *Amount) SatoshisUint64() uint64 {
-	return a.satoshis
-}
-
 // Returns value as amount in satoshi's, formated as base 10 decimal string. (1 BTC = 100,000,000).
-func (a *Amount) SatoshisString() string {
-	return strconv.FormatUint(a.satoshis, 10)
+func (a Amount) SatoshisString() string {
+	return strconv.FormatUint(uint64(a), 10)
 }
 
 // Implementing the json.Unmashaler inteface. Checks and parses given `data []byte` with satoshisFromBitcoinsString.
@@ -64,29 +55,20 @@ func (a *Amount) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	a.satoshis = s
+	amt := Amount(s)
+	a = &amt
 	return nil
 }
 
 // Implementing the json.Marshaler interface. Returned []byte has same contents as Amount.String().
-func (a *Amount) MarshalJSON() ([]byte, error) {
+func (a Amount) MarshalJSON() ([]byte, error) {
 	return []byte(a.String()), nil
 }
 
 // Create new Amount object from a bitcoin string.
-func AmountFromBitcoinsString(bitcoins string) (*Amount, error) {
+func AmountFromBitcoinsString(bitcoins string) (Amount, error) {
 	s, err := satoshisFromBitcoinsString(bitcoins)
-	if err != nil {
-		return nil, err
-	}
-	return &Amount{satoshis: s}, nil
-}
-
-// Create new Amount object from amount Satoshi's uint64.
-func AmountFromSatoshisUint64(satoshis uint64) *Amount {
-	return &Amount{
-		satoshis: satoshis,
-	}
+	return Amount(s), err
 }
 
 // Internal helper function. Checks and converts bitcoin string to satoshi's.
