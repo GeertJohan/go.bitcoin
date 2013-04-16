@@ -55,8 +55,7 @@ func (a *Amount) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	amt := Amount(s)
-	a = &amt
+	*a = Amount(s)
 	return nil
 }
 
