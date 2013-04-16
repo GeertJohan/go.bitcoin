@@ -2,68 +2,73 @@ package bitcoin
 
 import (
 	"encoding/json"
+	"math/rand"
 	"testing"
-	"testing/quick"
 )
 
-func TestSatoshiStringConversion(t *testing.T) {
-	f := func(i uint64) bool {
-		a := Amount(i)
-		s := a.SatoshisString()
+var testValues []uint64
 
-		as, err := AmountFromBitcoinsString(s)
-		if err != nil {
-			return a > MaximumValue && err == ErrTooBig
-		}
-
-		t.Logf("%v -> %v (%v)", i, as, a)
-
-		return as == a
-	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error(err)
+func init() {
+	r := rand.New(rand.NewSource(87592894858421))
+	testValues = []uint64{0, 1,
+		MaximumSatoshis - 1, MaximumSatoshis, MaximumSatoshis + 1}
+	for len(testValues) < 10000 {
+		testValues = append(testValues, abs(r.Int63n(MaximumSatoshis)))
 	}
 }
 
+func abs(i int64) uint64 {
+	if i < 0 {
+		return uint64(-i)
+	}
+	return uint64(i)
+}
+
 func TestStringConversion(t *testing.T) {
-	f := func(i uint64) bool {
+	for _, i := range testValues {
 		a := Amount(i)
 		s := a.String()
 
 		as, err := AmountFromBitcoinsString(s)
-		if err != nil {
-			return a > MaximumValue && err == ErrTooBig
+		if err != nil && !(a > MaximumSatoshis && err == ErrTooBig) {
+			t.Errorf("Error parsing %v from %v: %v",
+				s, i, err)
 		}
 
-		return as == a
-	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error(err)
+		if err == nil && as != a {
+			t.Errorf("Expected %v == %v for %v", as, a, i)
+		}
 	}
 }
 
 func TestJSONEncoding(t *testing.T) {
-	f := func(i uint64) bool {
-		thing := struct {
-			A Amount
-		}{}
+	for _, i := range testValues {
+		thing := struct{ A Amount }{}
 		thing.A = Amount(i)
 
 		data, err := json.Marshal(&thing)
 		if err != nil {
-			return false
+			t.Errorf("Error on %v: %v", i, err)
 		}
 
 		thing.A = 0
 
 		err = json.Unmarshal(data, &thing)
-		if err != nil {
-			return i > MaximumValue && err == ErrTooBig
+		if err != nil && !(thing.A > MaximumSatoshis && err == ErrTooBig) {
+			t.Errorf("Error parsing %s from %v: %v",
+				data, i, err)
 		}
 
-		return thing.A == Amount(i)
+		if err == nil && thing.A != Amount(i) {
+			t.Errorf("Expected %v == %v for %v", thing.A, Amount(i), i)
+		}
 	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error(err)
+
+	// Also check one that can't be parsed
+	data := []byte(`{"A": "1.x"}`)
+	thing := struct{ A Amount }{}
+	err := json.Unmarshal(data, &thing)
+	if err == nil {
+		t.Errorf("Expected to fail parsing %s, got %v", data, thing)
 	}
 }

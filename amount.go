@@ -11,7 +11,8 @@ import (
 // One bitcoin consists of 100,000,000 (100-milion) satoshi's.
 const (
 	SatoshisPerBitcoin = 100000000
-	MaximumValue       = 21e6 * SatoshisPerBitcoin
+	MaximumBitcoins    = 21e6
+	MaximumSatoshis    = MaximumBitcoins * SatoshisPerBitcoin
 )
 
 var (
@@ -72,7 +73,7 @@ func (a Amount) MarshalJSON() ([]byte, error) {
 // Create new Amount object from a bitcoin string.
 func AmountFromBitcoinsString(bitcoins string) (Amount, error) {
 	s, err := satoshisFromBitcoinsString(bitcoins)
-	if s > MaximumValue {
+	if s > MaximumSatoshis {
 		return 0, ErrTooBig
 	}
 	return Amount(s), err
@@ -103,11 +104,11 @@ func satoshisFromRoundBitcoinsString(bitcoins string) (uint64, error) {
 		return 0, errorInvalidRoundBitcoinsString
 	}
 	// convert bitcoins string to bitcoinsUint64
-	bitcoinsUint64, _ := strconv.ParseUint(bitcoins, 10, 64)
+	bitcoinsUint64, err := strconv.ParseUint(bitcoins, 10, 64)
 	// multiply bitcoinsUint64 with amount of satoshis in a bitcoin.. satoshis is what we want.
 	satoshis := bitcoinsUint64 * SatoshisPerBitcoin
 	// done
-	return satoshis, nil
+	return satoshis, err
 }
 
 func satoshisFromLooseBitcoinsString(bitcoins string) (uint64, error) {
