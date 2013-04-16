@@ -9,7 +9,10 @@ import (
 )
 
 // One bitcoin consists of 100,000,000 (100-milion) satoshi's.
-const SatoshisPerBitcoin = 100000000
+const (
+	SatoshisPerBitcoin = 100000000
+	MaximumValue       = 21e6 * SatoshisPerBitcoin
+)
 
 var (
 	// Regular expression to test for a string to be a valid strict bitcoin string
@@ -22,6 +25,8 @@ var (
 	errorInvalidRoundBitcoinsString  = errors.New(`Invalid round bitcoins string. Expecting a string that conforms to '[0-9]+'.`)
 	errorInvalidLooseBitcoinsString  = errors.New(`Invalid strict bitcoins string. Expecting a string that conforms to '[0-9]+\.[0-9]{1,8}'.`)
 	errorInvalidStrictBitcoinsString = errors.New(`Invalid strict bitcoins string. Expecting a string that conforms to '[0-9]+\\.[0-9]{8}'.`)
+
+	ErrTooBig = errors.New("Amount exceeds maximum possible bitcoin value.")
 )
 
 // Amount represents any bitcoin value and presents convenient methods for calculation and formatting (pretty-printing).
@@ -67,6 +72,9 @@ func (a Amount) MarshalJSON() ([]byte, error) {
 // Create new Amount object from a bitcoin string.
 func AmountFromBitcoinsString(bitcoins string) (Amount, error) {
 	s, err := satoshisFromBitcoinsString(bitcoins)
+	if s > MaximumValue {
+		return 0, ErrTooBig
+	}
 	return Amount(s), err
 }
 
