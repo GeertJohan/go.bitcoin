@@ -18,10 +18,89 @@ func NewBitcoindClient(url, username, password string) *BitcoindClient {
 	return bc
 }
 
-func (bc *BitcoindClient) GetBalance() (Amount, error) {
+// Result from an Info call.
+type Info struct {
+	Balance         Amount
+	Blocks          int
+	Connections     int
+	Difficulty      float64
+	Errors          string
+	KeyPoolOldest   uint32
+	KeyPoolSize     int
+	PayTxFee        Amount
+	ProtocolVersion int
+	Proxy           string
+	Testnet         bool
+	Version         int
+	WalletVersion   int
+}
+
+func (bc *BitcoindClient) GetInfo() (Info, error) {
+	rv := Info{}
+	_, err := bc.client.Call("getinfo", nil, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) GetBalance(a ...string) (Amount, error) {
 	var am Amount
-	_, err := bc.client.Call("getbalance", nil, &am)
+	_, err := bc.client.Call("getbalance", a, &am)
 	return am, err
+}
+
+func (bc *BitcoindClient) ListAccounts() (map[string]Amount, error) {
+	m := map[string]Amount{}
+	_, err := bc.client.Call("listaccounts", nil, &m)
+	return m, err
+}
+
+func (bc *BitcoindClient) GetAccount(name string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("getaccount", []string{name}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) GetAccountAddress(name string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("getaccountaddress", []string{name}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) SendToAddress(addr string, amt Amount,
+	comment, commentto string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("sendtoaddress",
+		[]interface{}{addr, amt, comment, commentto}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) SendFrom(myact, addr string, amt Amount,
+	minconf int, comment, commentto string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("sendfrom",
+		[]interface{}{myact, addr, amt, minconf, comment, commentto}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) GetTransaction(txid string) (Transaction, error) {
+	rv := Transaction{}
+	_, err := bc.client.Call("gettransaction", []string{txid}, &rv)
+	return rv, err
+}
+
+type AddressInfo struct {
+	Isvalid      bool
+	Isscript     bool
+	Address      string
+	Iscompressed bool
+	Account      string
+	Ismine       bool
+	Pubkey       string
+}
+
+func (bc *BitcoindClient) ValidateAddress(addr string) (AddressInfo, error) {
+	rv := AddressInfo{}
+	_, err := bc.client.Call("validateaddress", []string{addr}, &rv)
+	return rv, err
 }
 
 //Initialcommit.
@@ -39,7 +118,6 @@ func (bc *BitcoindClient) GetBalance() (Amount, error) {
 // getdifficulty
 // getgenerate
 // gethashespersec
-// getinfo
 // getmininginfo
 // getnewaddress
 // getpeerinfo
@@ -48,18 +126,14 @@ func (bc *BitcoindClient) GetBalance() (Amount, error) {
 // getreceivedbyaccount
 // getreceivedbyaddress
 // createrawtransaction
-// gettransaction
 // getwork
 // help
-// sendfrom
 // importprivkey
 // sendmany
 // sendrawtransaction
-// sendtoaddress
 // keypoolrefill
 // setaccount
 // decoderawtransaction
-// listaccounts
 // setgenerate
 // listaddressgroupings
 // settxfee
@@ -74,11 +148,8 @@ func (bc *BitcoindClient) GetBalance() (Amount, error) {
 // stop
 // listunspent
 // submitblock
-// getaccount
-// getaccountaddress
 // getaddressesbyaccount
 // getbalance
 // move
-// validateaddress
 // getblock
 // verifymessage
