@@ -65,6 +65,28 @@ func (bc *BitcoindClient) GetAccountAddress(name string) (string, error) {
 	return rv, err
 }
 
+func (bc *BitcoindClient) SendToAddress(addr string, amt Amount,
+	comment, commentto string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("sendtoaddress",
+		[]interface{}{addr, amt, comment, commentto}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) SendFrom(myact, addr string, amt Amount,
+	minconf int, comment, commentto string) (string, error) {
+	var rv string
+	_, err := bc.client.Call("sendfrom",
+		[]interface{}{myact, addr, amt, minconf, comment, commentto}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) GetTransaction(txid string) (Transaction, error) {
+	rv := Transaction{}
+	_, err := bc.client.Call("gettransaction", []string{txid}, &rv)
+	return rv, err
+}
+
 //Initialcommit.
 //Hello,andthanksforcheckingthehistoryofthisproject.
 //Actualcodewillapearinthenextcommit^^
@@ -88,14 +110,11 @@ func (bc *BitcoindClient) GetAccountAddress(name string) (string, error) {
 // getreceivedbyaccount
 // getreceivedbyaddress
 // createrawtransaction
-// gettransaction
 // getwork
 // help
-// sendfrom
 // importprivkey
 // sendmany
 // sendrawtransaction
-// sendtoaddress
 // keypoolrefill
 // setaccount
 // decoderawtransaction
