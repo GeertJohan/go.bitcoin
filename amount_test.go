@@ -6,22 +6,18 @@ import (
 	"testing"
 )
 
-var testValues []uint64
+var testValues []int64
 
 func init() {
 	r := rand.New(rand.NewSource(87592894858421))
-	testValues = []uint64{0, 1,
-		MaximumSatoshis - 1, MaximumSatoshis, MaximumSatoshis + 1}
+	testValues = []int64{
+		0, 1, -1,
+		MaximumSatoshis - 1, MaximumSatoshis, MaximumSatoshis + 1,
+		-MaximumSatoshis - 1, -MaximumSatoshis, -MaximumSatoshis + 1,
+	}
 	for len(testValues) < 10000 {
-		testValues = append(testValues, abs(r.Int63n(MaximumSatoshis)))
+		testValues = append(testValues, r.Int63n(MaximumSatoshis))
 	}
-}
-
-func abs(i int64) uint64 {
-	if i < 0 {
-		return uint64(-i)
-	}
-	return uint64(i)
 }
 
 func TestStringConversion(t *testing.T) {
@@ -30,7 +26,7 @@ func TestStringConversion(t *testing.T) {
 		s := a.String()
 
 		as, err := AmountFromBitcoinsString(s)
-		if err != nil && !(a > MaximumSatoshis && err == ErrTooBig) {
+		if err != nil && !(outOfRange(i) && err == ErrTooBig) {
 			t.Errorf("Error parsing %v from %v: %v",
 				s, i, err)
 		}
@@ -54,7 +50,7 @@ func TestJSONEncoding(t *testing.T) {
 		thing.A = 0
 
 		err = json.Unmarshal(data, &thing)
-		if err != nil && !(thing.A > MaximumSatoshis && err == ErrTooBig) {
+		if err != nil && !(outOfRange(i) && err == ErrTooBig) {
 			t.Errorf("Error parsing %s from %v: %v",
 				data, i, err)
 		}
