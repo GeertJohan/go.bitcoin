@@ -87,6 +87,22 @@ func (bc *BitcoindClient) GetTransaction(txid string) (Transaction, error) {
 	return rv, err
 }
 
+type AddressInfo struct {
+	Isvalid      bool
+	Isscript     bool
+	Address      string
+	Iscompressed bool
+	Account      string
+	Ismine       bool
+	Pubkey       string
+}
+
+func (bc *BitcoindClient) ValidateAddress(addr string) (AddressInfo, error) {
+	rv := AddressInfo{}
+	_, err := bc.client.Call("validateaddress", []string{addr}, &rv)
+	return rv, err
+}
+
 //Initialcommit.
 //Hello,andthanksforcheckingthehistoryofthisproject.
 //Actualcodewillapearinthenextcommit^^
@@ -135,6 +151,5 @@ func (bc *BitcoindClient) GetTransaction(txid string) (Transaction, error) {
 // getaddressesbyaccount
 // getbalance
 // move
-// validateaddress
 // getblock
 // verifymessage
