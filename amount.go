@@ -58,6 +58,13 @@ func (a Amount) String() string {
 	return fmt.Sprintf("%s%s.%s", s, mayor, minor)
 }
 
+// This fulfills the contract for flag.Value which is handy.
+func (a *Amount) Set(to string) error {
+	s, err := AmountFromBitcoinsString(to)
+	*a = s
+	return err
+}
+
 // Returns value as amount in satoshi's, formated as base 10 decimal string. (1 BTC = 100,000,000).
 func (a Amount) SatoshisString() string {
 	return strconv.FormatInt(int64(a), 10)
