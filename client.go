@@ -103,6 +103,18 @@ func (bc *BitcoindClient) ValidateAddress(addr string) (AddressInfo, error) {
 	return rv, err
 }
 
+func (bc *BitcoindClient) GetRawTransaction(txn string) (RawTransaction, error) {
+	var rv RawTransaction
+	_, err := bc.client.Call("getrawtransaction", []interface{}{txn, 1}, &rv)
+	return rv, err
+}
+
+func (bc *BitcoindClient) DecodeRawTransaction(txn string) (RawTransaction, error) {
+	rv := RawTransaction{}
+	_, err := bc.client.Call("decoderawtransaction", []string{txn}, &rv)
+	return rv, err
+}
+
 //Initialcommit.
 //Hello,andthanksforcheckingthehistoryofthisproject.
 //Actualcodewillapearinthenextcommit^^
@@ -122,7 +134,6 @@ func (bc *BitcoindClient) ValidateAddress(addr string) (AddressInfo, error) {
 // getnewaddress
 // getpeerinfo
 // getrawmempool
-// getrawtransaction
 // getreceivedbyaccount
 // getreceivedbyaddress
 // createrawtransaction
@@ -133,7 +144,6 @@ func (bc *BitcoindClient) ValidateAddress(addr string) (AddressInfo, error) {
 // sendrawtransaction
 // keypoolrefill
 // setaccount
-// decoderawtransaction
 // setgenerate
 // listaddressgroupings
 // settxfee
