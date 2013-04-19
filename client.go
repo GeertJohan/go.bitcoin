@@ -115,6 +115,14 @@ func (bc *BitcoindClient) DecodeRawTransaction(txn string) (RawTransaction, erro
 	return rv, err
 }
 
+func (bc *BitcoindClient) ListTransactions(acct string,
+	count int, from int) ([]Transaction, error) {
+
+	rv := []Transaction{}
+	_, err := bc.client.Call("listtransactions", []interface{}{acct, count, from}, &rv)
+	return rv, err
+}
+
 //Initialcommit.
 //Hello,andthanksforcheckingthehistoryofthisproject.
 //Actualcodewillapearinthenextcommit^^
@@ -154,7 +162,6 @@ func (bc *BitcoindClient) DecodeRawTransaction(txn string) (RawTransaction, erro
 // dumpprivkey
 // listsinceblock
 // encryptwallet
-// listtransactions
 // stop
 // listunspent
 // submitblock
