@@ -123,6 +123,12 @@ func (bc *BitcoindClient) ListTransactions(acct string,
 	return rv, err
 }
 
+func (bc *BitcoindClient) GetAddressesByAccount(acct string) ([]string, error) {
+	rv := []string{}
+	_, err := bc.client.Call("getaddressesbyaccount", []interface{}{acct}, &rv)
+	return rv, err
+}
+
 //Initialcommit.
 //Hello,andthanksforcheckingthehistoryofthisproject.
 //Actualcodewillapearinthenextcommit^^
@@ -165,7 +171,6 @@ func (bc *BitcoindClient) ListTransactions(acct string,
 // stop
 // listunspent
 // submitblock
-// getaddressesbyaccount
 // getbalance
 // move
 // getblock
