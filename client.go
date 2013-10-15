@@ -36,7 +36,19 @@ func makeClient(certFile string) *http.Client {
 }
 
 // Create a new BitcoindClient by http URL (e.g. http://127.0.0.1:8332), username and password.
-func NewBitcoindClient(url, username, password, certFile string) *BitcoindClient {
+func NewBitcoindClient(url, username, password string) *BitcoindClient {
+	bc := &BitcoindClient{
+		client: httpjsonrpc.NewClient(url, nil),
+	}
+	bc.client.SetBasicAuth(username, password)
+	return bc
+}
+
+// Create a new BitcoindClient by secure http URL (e.g. https://127.0.0.1:8332), username and password.
+// Add the file with the bitcoin server TLS certificate to encrypt the data.
+// Notice, you still need the username and password because these are not client certificates.
+// Configure your server according to this: https://en.bitcoin.it/wiki/Enabling_SSL_on_original_client_daemon
+func NewBitcoindClientSSL(url, username, password, certFile string) *BitcoindClient {
 	client := makeClient(certFile)
 	bc := &BitcoindClient{
 		client: httpjsonrpc.NewClient(url, client),
