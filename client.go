@@ -2,6 +2,12 @@ package bitcoin
 
 import (
 	"github.com/GeertJohan/go.httpjsonrpc"
+	"crypto/x509"
+	"crypto/tls"
+	"net/http"
+	"os"
+	"io/ioutil"
+	"fmt"
 )
 
 // The BitcoindClient allows you to easily retrieve information from your bitcoind instance/server.
@@ -9,10 +15,43 @@ type BitcoindClient struct {
 	client *httpjsonrpc.Client
 }
 
+func slurpFile(filename string) []byte {
+        f, err := os.Open(filename)
+        if (err != nil) { panic (err) }
+        defer f.Close()
+        contents, err := ioutil.ReadAll(f)
+        if (err != nil) { panic (err) }
+        return contents
+}
+
+func makeClient(certFile string) *http.Client {
+	pool := x509.NewCertPool()
+	ok := pool.AppendCertsFromPEM(slurpFile(certFile))
+	if (ok == false) { panic (fmt.Sprintf("No certificates found in %s", certFile)) }
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{RootCAs: pool},
+	}
+	client := &http.Client{Transport: tr}
+	return client
+}
+
 // Create a new BitcoindClient by http URL (e.g. http://127.0.0.1:8332), username and password.
 func NewBitcoindClient(url, username, password string) *BitcoindClient {
 	bc := &BitcoindClient{
 		client: httpjsonrpc.NewClient(url, nil),
+	}
+	bc.client.SetBasicAuth(username, password)
+	return bc
+}
+
+// Create a new BitcoindClient by secure http URL (e.g. https://127.0.0.1:8332), username and password.
+// Add the file with the bitcoin server TLS certificate to encrypt the data.
+// Notice, you still need the username and password because these are not client certificates.
+// Configure your server according to this: https://en.bitcoin.it/wiki/Enabling_SSL_on_original_client_daemon
+func NewBitcoindClientSSL(url, username, password, certFile string) *BitcoindClient {
+	client := makeClient(certFile)
+	bc := &BitcoindClient{
+		client: httpjsonrpc.NewClient(url, client),
 	}
 	bc.client.SetBasicAuth(username, password)
 	return bc
